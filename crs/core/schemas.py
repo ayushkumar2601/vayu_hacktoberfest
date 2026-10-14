@@ -2,6 +2,7 @@ from __future__ import annotations
 """Shared data contracts for the AIKavach CRS pipeline."""
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -127,6 +128,9 @@ class VerificationResult(BaseModel):
     static_rescan_clean: bool
     approved: bool
     reason: str | None = None
+    sandbox_provider: str = "local"
+    sandbox_metadata: dict[str, Any] | None = None
+
 
 
 class CRSRunResult(BaseModel):

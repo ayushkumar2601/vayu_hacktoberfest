@@ -215,6 +215,7 @@ def run_stream(
     emit: Callable[[str, dict[str, Any]], None] | None = None,
     pipeline_factory: Callable[[Any], CRSPipeline] | None = None,
     model: str | None = None,
+    sandbox: str = "local",
 ) -> int:
     emit = emit or EventWriter()
     started = perf_counter()
@@ -224,14 +225,18 @@ def run_stream(
         emit("error", {"stage": "SETUP", "message": str(exc)})
         return 1
 
-    emit("hello", {"target": target, "mode": mode, "provider": provider, "model": model})
+    sandbox_provider = sandbox or os.environ.get("VAYU_SANDBOX_PROVIDER", "local")
+    emit("hello", {"target": target, "mode": mode, "provider": provider, "model": model, "sandbox": sandbox_provider})
     try:
         emit("repo_map", build_repo_map(target))
     except Exception as exc:
         emit("error", {"stage": "FIND", "message": f"Cannot read target: {exc}"})
         return 1
 
-    pipeline = (pipeline_factory or (lambda c: CRSPipeline(reasoning_client=c, patch_client=c)))(client)
+    pipeline = (
+        pipeline_factory
+        or (lambda c: CRSPipeline(reasoning_client=c, patch_client=c, sandbox_provider=sandbox_provider))
+    )(client)
     try:
         result = pipeline.run(target, max_retries=max_retries, on_event=emit)
     except NoFindingsError:
@@ -268,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("target_path")
     parser.add_argument("--mode", choices=["auto", "ollama", "offline"], default="auto")
     parser.add_argument("--model", default=None, help="Specific Ollama model to use")
+    parser.add_argument("--sandbox", choices=["local", "digitalocean"], default="local", help="Sandbox isolation provider")
     parser.add_argument("--artifacts-dir", default="artifacts")
     parser.add_argument("--max-retries", type=int, default=2)
     args = parser.parse_args(argv)
@@ -277,7 +283,9 @@ def main(argv: list[str] | None = None) -> int:
         args.artifacts_dir,
         args.max_retries,
         model=args.model,
+        sandbox=args.sandbox,
     )
+
 
 
 if __name__ == "__main__":

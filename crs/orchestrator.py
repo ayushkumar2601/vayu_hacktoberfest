@@ -46,6 +46,7 @@ class CRSPipeline:
         evidence_builder: EvidenceBuilder | None = None,
         patch_validator: PatchValidator | None = None,
         verifier: VerificationEngine | None = None,
+        sandbox_provider: str = "local",
     ) -> None:
         self.repository_loader = repository_loader or RepositoryLoader()
         self.scanner = scanner or StaticScanner()
@@ -58,8 +59,10 @@ class CRSPipeline:
             patch_client, validator=self.patch_validator
         )
         self.verifier = verifier or VerificationEngine(
-            patch_validator=self.patch_validator
+            patch_validator=self.patch_validator,
+            sandbox_provider=sandbox_provider,
         )
+
 
     def run(
         self,

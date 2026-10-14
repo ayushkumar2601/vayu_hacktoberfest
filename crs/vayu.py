@@ -215,7 +215,7 @@ def cli(ctx):
         console.print(ctx.get_help())
 
 
-def run_scan(target_path):
+def run_scan(target_path, sandbox="local"):
     """Execute the core VAYU CRS scan and remediation pipeline."""
     console.print(ASCII_LOGO)
     
@@ -243,7 +243,11 @@ def run_scan(target_path):
         )
         sys.exit(1)
 
-    console.print("[dim]Model:[/] [orange3]gemma 4[/]\n")
+    console.print("[dim]Model:[/] [orange3]gemma 4[/]")
+    if sandbox == "digitalocean":
+        console.print("[dim]Sandbox:[/] [cyan]☁ DigitalOcean Ephemeral Droplet (Hardware Hypervisor)[/]\n")
+    else:
+        console.print("[dim]Sandbox:[/] [dim white]Local Ephemeral Workspace[/]\n")
     
     # Initialize components
     repository_loader = RepositoryLoader()
@@ -252,7 +256,11 @@ def run_scan(target_path):
     reasoning_engine = ReasoningEngine(client, evidence_builder=evidence_builder)
     patch_validator = PatchValidator()
     patch_generator = PatchGenerator(client, validator=patch_validator)
-    verifier = VerificationEngine(patch_validator=patch_validator)
+    verifier = VerificationEngine(
+        patch_validator=patch_validator,
+        sandbox_provider=sandbox,
+    )
+
     
     target_dir = str(Path(target_path).expanduser())
     
@@ -390,9 +398,16 @@ def run_scan(target_path):
 
 @cli.command("scan")
 @click.argument('target_path', type=click.Path(exists=True))
-def scan(target_path):
+@click.option(
+    '--sandbox',
+    type=click.Choice(['local', 'digitalocean'], case_sensitive=False),
+    default='local',
+    help='Execution sandbox provider (local ephemeral workspace or DigitalOcean droplet)',
+)
+def scan(target_path, sandbox):
     """Run the Vayu Autonomous Cyber Reasoning System on a target repository."""
-    run_scan(target_path)
+    run_scan(target_path, sandbox=sandbox.lower())
+
 
 
 cli.add_command(skills_cli, name="skills")

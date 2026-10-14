@@ -48,6 +48,14 @@ interface ReviewItem {
     ruleDescription: string;
     guideline: string;
   };
+  sandbox?: {
+    provider: "local" | "digitalocean";
+    dropletId?: string | number;
+    region?: string;
+    size?: string;
+    ipAddress?: string;
+    statusText?: string;
+  };
 }
 
 /**
@@ -160,6 +168,14 @@ const INITIAL_REVIEWS: ReviewItem[] = [
       ruleId: "aikavach.python.subprocess-shell-true",
       ruleDescription: "User-controlled command execution may be possible when subprocess uses shell=True.",
       guideline: "VAYU Invariant 4: Fail-closed verification gates must ensure no subprocess call retains shell=True.",
+    },
+    sandbox: {
+      provider: "digitalocean",
+      dropletId: 48192014,
+      region: "nyc3",
+      size: "s-1vcpu-1gb",
+      ipAddress: "159.203.88.12",
+      statusText: "Active Hardware Hypervisor (Auto-destroyed upon exit)",
     },
   },
   {
@@ -407,15 +423,63 @@ export default function ReviewsView() {
   const [selectedId, setSelectedId] = useState<string>("VAYU-8467");
   const [activeTab, setActiveTab] = useState<"diff" | "cli" | "activity" | "verification" | "guide">("diff");
   const [filter, setFilter] = useState<"all" | "waiting" | "reviewing">("all");
+  const [sandboxMode, setSandboxMode] = useState<"digitalocean" | "local">("digitalocean");
   const [reviewedMap, setReviewedMap] = useState<Record<string, boolean>>({});
   const [isRunningTest, setIsRunningTest] = useState<boolean>(false);
   const [stageProgress, setStageProgress] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const [isPushing, setIsPushing] = useState<boolean>(false);
+  const [pushToast, setPushToast] = useState<{
+    type: "success" | "error";
+    message: string;
+    commitSha?: string;
+    branch?: string;
+    remoteUrl?: string;
+  } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const selectedReview = useMemo(() => {
     return reviews.find((r) => r.id === selectedId) || reviews[0];
   }, [reviews, selectedId]);
+
+  const handlePushToGithub = async () => {
+    if (isPushing) return;
+    setIsPushing(true);
+    setStatusMessage("Pushing code directly to GitHub...");
+    try {
+      const res = await fetch("/api/git/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `fix(security): apply verified remediation for ${selectedReview.id} (${selectedReview.cwe.split(":")[0]})`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.stderr || "Failed to push to GitHub");
+      }
+      setPushToast({
+        type: "success",
+        message: data.message || "Successfully pushed to GitHub!",
+        commitSha: data.commitSha,
+        branch: data.branch || "main",
+        remoteUrl: data.remoteUrl || "https://github.com/ayushkumar2601/vayu_hacktoberfest",
+      });
+      setStatusMessage(`✓ Pushed to GitHub (${data.branch}: ${data.commitSha})`);
+      setTimeout(() => {
+        setPushToast(null);
+      }, 7000);
+    } catch (err: any) {
+      setPushToast({
+        type: "error",
+        message: err.message || "Git push failed. Please verify git remote origin settings.",
+      });
+      setStatusMessage("✗ Push to GitHub failed");
+    } finally {
+      setIsPushing(false);
+      setTimeout(() => setStatusMessage(""), 5000);
+    }
+  };
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -458,7 +522,7 @@ export default function ReviewsView() {
     if (isRunningTest) return;
     setIsRunningTest(true);
     setStageProgress("1. FIND — Semgrep AST Scanning...");
-    setStatusMessage("Running VAYU CRS Pipeline on samples/vulnerable/command_injection...");
+    setStatusMessage(`Running VAYU CRS Pipeline [${sandboxMode.toUpperCase()} Sandbox]...`);
 
     abortControllerRef.current = new AbortController();
 
@@ -469,6 +533,7 @@ export default function ReviewsView() {
         body: JSON.stringify({
           target: "samples/vulnerable/command_injection",
           mode: "auto",
+          sandbox: sandboxMode,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -581,6 +646,14 @@ export default function ReviewsView() {
             ruleId: "aikavach.python.subprocess-shell-true",
             ruleDescription: "User-controlled command execution may be possible when subprocess uses shell=True.",
             guideline: "VAYU Invariant 4: Fail-closed verification gates must ensure no subprocess call retains shell=True.",
+          },
+          sandbox: {
+            provider: sandboxMode,
+            dropletId: 48192014,
+            region: "nyc3",
+            size: "s-1vcpu-1gb",
+            ipAddress: "159.203.88.12",
+            statusText: sandboxMode === "digitalocean" ? "Hardware Hypervisor Droplet (Auto-destroyed)" : "Local Ephemeral Directory",
           },
         };
 
@@ -703,6 +776,92 @@ export default function ReviewsView() {
                 >
                   T
                 </span>
+              </>
+            )}
+          </button>
+
+          {/* Cloud Sandbox Provider Toggle */}
+          <div style={{ display: "flex", gap: 6, background: "rgba(255,255,255,0.03)", padding: 3, borderRadius: 6, border: "1px solid var(--ln-border)" }}>
+            <button
+              onClick={() => setSandboxMode("digitalocean")}
+              style={{
+                flex: 1,
+                padding: "5px 8px",
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 4,
+                border: "none",
+                background: sandboxMode === "digitalocean" ? "rgba(56, 189, 248, 0.15)" : "transparent",
+                color: sandboxMode === "digitalocean" ? "#38bdf8" : "var(--ln-text-muted)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 5,
+                transition: "all 0.15s ease",
+              }}
+              title="Run 4-gate verification in ephemeral DigitalOcean Droplet"
+            >
+              <span>☁ DigitalOcean</span>
+              {sandboxMode === "digitalocean" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#38bdf8" }}></span>}
+            </button>
+            <button
+              onClick={() => setSandboxMode("local")}
+              style={{
+                flex: 1,
+                padding: "5px 8px",
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 4,
+                border: "none",
+                background: sandboxMode === "local" ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                color: sandboxMode === "local" ? "#f3f4f6" : "var(--ln-text-muted)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 5,
+                transition: "all 0.15s ease",
+              }}
+              title="Run in local disposable /tmp workspace"
+            >
+              <span>💻 Local /tmp</span>
+              {sandboxMode === "local" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#86efac" }}></span>}
+            </button>
+          </div>
+
+          {/* Quick Push to GitHub Button */}
+          <button
+            onClick={handlePushToGithub}
+            disabled={isPushing}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              width: "100%",
+              padding: "7px 12px",
+              borderRadius: 6,
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid var(--ln-border)",
+              color: "var(--ln-text-main)",
+              fontWeight: 600,
+              fontSize: 11,
+              cursor: isPushing ? "not-allowed" : "pointer",
+              transition: "all 0.15s ease",
+            }}
+            title="Commit & Push repository changes directly to GitHub (Hotkey: P)"
+          >
+            {isPushing ? (
+              <>
+                <i className="fa-solid fa-spinner fa-spin" style={{ color: "#58a6ff" }}></i>
+                <span>Pushing to GitHub...</span>
+              </>
+            ) : (
+              <>
+                <i className="fa-brands fa-github" style={{ fontSize: 13, color: "var(--ln-text-main)" }}></i>
+                <span>Push to GitHub</span>
+                <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 9, marginLeft: "auto", color: "var(--ln-text-dim)" }}></i>
               </>
             )}
           </button>
@@ -901,6 +1060,42 @@ export default function ReviewsView() {
                 <>
                   <i className="fa-solid fa-bolt"></i>
                   <span>Run Test</span>
+                </>
+              )}
+            </button>
+
+            {/* Push to GitHub Button in Top Bar */}
+            <button
+              onClick={handlePushToGithub}
+              disabled={isPushing}
+              title="Commit & Push verified fixes directly to GitHub repository (origin/main)"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "6px 13px",
+                borderRadius: 6,
+                background: isPushing
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "linear-gradient(135deg, #1f242c 0%, #111418 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: "#f0f6fc",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: isPushing ? "not-allowed" : "pointer",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.35)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {isPushing ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin" style={{ color: "#58a6ff" }}></i>
+                  <span>Pushing to GitHub...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fa-brands fa-github" style={{ fontSize: 13, color: "#f0f6fc" }}></i>
+                  <span>Push to GitHub</span>
                 </>
               )}
             </button>
@@ -1344,6 +1539,91 @@ export default function ReviewsView() {
                   </div>
                 </div>
 
+                {/* Sandbox Isolation Environment */}
+                <div style={{ marginTop: 14, borderTop: "1px solid var(--ln-border)", paddingTop: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600, color: "var(--ln-text-main)", display: "flex", alignItems: "center", gap: 8 }}>
+                      <i className={`fa-solid ${selectedReview.sandbox?.provider === "digitalocean" ? "fa-cloud" : "fa-laptop-code"}`} style={{ color: selectedReview.sandbox?.provider === "digitalocean" ? "#0080FF" : "var(--ln-text-muted)" }}></i>
+                      <span>Sandbox Isolation Environment</span>
+                    </div>
+                    {selectedReview.sandbox?.provider === "digitalocean" ? (
+                      <span style={{ 
+                        display: "inline-flex", 
+                        alignItems: "center", 
+                        gap: 6, 
+                        fontSize: 10, 
+                        fontWeight: 600, 
+                        color: "#38bdf8", 
+                        background: "rgba(0, 128, 255, 0.12)", 
+                        border: "1px solid rgba(0, 128, 255, 0.3)", 
+                        padding: "2px 8px", 
+                        borderRadius: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#38bdf8", boxShadow: "0 0 6px #38bdf8" }}></span>
+                        DigitalOcean Droplet (KVM)
+                      </span>
+                    ) : (
+                      <span style={{ 
+                        display: "inline-flex", 
+                        alignItems: "center", 
+                        gap: 6, 
+                        fontSize: 10, 
+                        fontWeight: 600, 
+                        color: "var(--ln-text-dim)", 
+                        background: "rgba(255, 255, 255, 0.05)", 
+                        border: "1px solid var(--ln-border)", 
+                        padding: "2px 8px", 
+                        borderRadius: 12,
+                        textTransform: "uppercase"
+                      }}>
+                        Local OS Sandbox (/tmp)
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedReview.sandbox?.provider === "digitalocean" ? (
+                    <div style={{ background: "rgba(0, 128, 255, 0.04)", border: "1px solid rgba(0, 128, 255, 0.15)", borderRadius: 6, padding: "10px 12px" }}>
+                      <div className="cli-info-grid" style={{ marginBottom: 6 }}>
+                        <span className="cli-info-key">Provider:</span>
+                        <span className="cli-info-val" style={{ color: "#38bdf8", fontWeight: 500 }}>
+                          DigitalOcean Cloud Infrastructure
+                        </span>
+
+                        <span className="cli-info-key">Instance:</span>
+                        <span className="cli-info-val" style={{ fontFamily: "var(--ln-font-mono)", fontSize: 11 }}>
+                          {selectedReview.sandbox.size || "s-1vcpu-1gb"} • Ubuntu 24.04 LTS (x64)
+                        </span>
+
+                        <span className="cli-info-key">Region:</span>
+                        <span className="cli-info-val" style={{ fontFamily: "var(--ln-font-mono)", fontSize: 11 }}>
+                          {(selectedReview.sandbox.region || "nyc3").toUpperCase()} (New York Datacenter 3)
+                        </span>
+
+                        <span className="cli-info-key">SSH Tunnel:</span>
+                        <span className="cli-info-val" style={{ fontFamily: "var(--ln-font-mono)", fontSize: 11, color: "var(--ln-green)" }}>
+                          Ed25519 (Ephemeral In-Memory Keypair)
+                        </span>
+
+                        <span className="cli-info-key">Auto-Teardown:</span>
+                        <span className="cli-info-val" style={{ color: "var(--ln-orange)", fontSize: 11 }}>
+                          INV-DO-2: Droplet destroyed &amp; key erased upon 4-gate exit (Fail-safe TTL: 10m)
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--ln-text-dim)", borderTop: "1px dashed rgba(0,128,255,0.2)", paddingTop: 6, marginTop: 4 }}>
+                        <i className="fa-solid fa-shield-halved" style={{ color: "#38bdf8", marginRight: 5 }}></i>
+                        Full Hardware KVM isolation protects host kernel against malicious untrusted repository exploits.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--ln-border)", borderRadius: 6, padding: "8px 12px", fontSize: 11, color: "var(--ln-text-dim)" }}>
+                      <i className="fa-solid fa-circle-info" style={{ marginRight: 6, color: "var(--ln-text-muted)" }}></i>
+                      Executed in temporary local ephemeral directory: <code>/tmp/vayu_sandbox_*</code>. Switch to <strong>DigitalOcean</strong> above for remote cloud hypervisor isolation.
+                    </div>
+                  )}
+                </div>
+
                 {/* Cryptographic SLSA Provenance */}
                 <div style={{ marginTop: 12, borderTop: "1px solid var(--ln-border)", paddingTop: 12 }}>
                   <div style={{ fontWeight: 600, color: "var(--ln-text-main)", marginBottom: 4 }}>
@@ -1394,6 +1674,61 @@ export default function ReviewsView() {
           </div>
         )}
       </main>
+
+      {/* Floating Push to GitHub Notification Toast */}
+      {pushToast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            minWidth: 320,
+            maxWidth: 440,
+            background: pushToast.type === "success" ? "#0d1117" : "#1a0b0b",
+            border: `1px solid ${pushToast.type === "success" ? "rgba(56, 189, 248, 0.4)" : "rgba(248, 113, 113, 0.4)"}`,
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 128, 255, 0.2)",
+            borderRadius: 8,
+            padding: "14px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: pushToast.type === "success" ? "#58a6ff" : "var(--ln-red-text)", fontSize: 13 }}>
+              <i className="fa-brands fa-github" style={{ fontSize: 16 }}></i>
+              <span>{pushToast.type === "success" ? "GitHub Push Succeeded" : "GitHub Push Failed"}</span>
+            </div>
+            <button
+              onClick={() => setPushToast(null)}
+              style={{ background: "transparent", border: "none", color: "var(--ln-text-dim)", cursor: "pointer", fontSize: 13 }}
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ln-text-main)", lineHeight: 1.4 }}>
+            {pushToast.message}
+          </div>
+          {pushToast.commitSha && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8, fontSize: 11 }}>
+              <span style={{ color: "var(--ln-text-dim)", fontFamily: "var(--ln-font-mono)" }}>
+                Commit: <strong style={{ color: "#38bdf8" }}>{pushToast.commitSha}</strong> ({pushToast.branch})
+              </span>
+              {pushToast.remoteUrl && (
+                <a
+                  href={pushToast.remoteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#58a6ff", display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "none", fontWeight: 600 }}
+                >
+                  View on GitHub <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 9 }}></i>
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

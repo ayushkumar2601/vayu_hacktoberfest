@@ -13,7 +13,7 @@ const MODES = new Set(["auto", "ollama", "offline"]);
  * dashboard terminal shows it. Closing the request stops the run.
  */
 export async function POST(request: Request) {
-  let body: { target?: string; mode?: string; model?: string };
+  let body: { target?: string; mode?: string; model?: string; sandbox?: string };
   try {
     body = await request.json();
   } catch {
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
   }
   const mode = MODES.has(body.mode ?? "") ? (body.mode as string) : "auto";
   const selectedModel = body.model || process.env.AIKAVACH_OLLAMA_MODEL || "llama3";
+  const sandbox = body.sandbox === "digitalocean" ? "digitalocean" : (process.env.VAYU_SANDBOX_PROVIDER || "local");
 
   const encoder = new TextEncoder();
   const line = (type: string, data: Record<string, unknown>) =>
@@ -47,6 +48,8 @@ export async function POST(request: Request) {
       mode,
       "--model",
       selectedModel,
+      "--sandbox",
+      sandbox,
       "--artifacts-dir",
       path.join(REPO_ROOT, "artifacts"),
     ],
