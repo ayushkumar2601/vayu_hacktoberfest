@@ -420,4 +420,68 @@ A task is complete IF AND ONLY IF:
 - [x] Automated tests have been executed and 100% pass (`140 passed in pytest`).
 - [x] Ephemeral verification sandboxes clean up completely without leaving orphaned files in `/tmp`.
 - [x] The final Git diff contains zero unintended edits or whitespace regressions.
-- [x] Documentation (`ARCHITECTURE.md`, `skills.md`) is kept accurate and updated.
+- [x] Documentation (`ARCHITECTURE.md`, `skills.md`, `docs/`) is kept accurate and updated.
+
+---
+
+## 17. VAYU Model Context Protocol (MCP) Server
+
+The **VAYU MCP Server** exposes VAYU's full autonomous remediation pipeline to AI coding assistants (Claude Desktop, Claude Code, Cursor, Windsurf) over standard `stdio`.
+
+### MCP Architecture & Safety Rules
+1. **Official MCP SDK**: Implemented using `mcp.server.fastmcp.FastMCP` (`vayu_mcp/`).
+2. **Dedicated Stream Transport**: Protocol frames route exclusively over `sys.stdout`. Application logging, diagnostics, and warnings **MUST** route strictly to `sys.stderr` to prevent JSON-RPC frame corruption.
+3. **Workspace Boundary Enforcement**: `MCPConfig.validate_target_path()` strictly rejects scans outside `allowed_roots`, directory escapes (`..`), null bytes, or unauthorized symlink targets.
+4. **Session Isolation**: `SessionManager` associates `run_id` with target metadata, findings, reasoning, candidate patches, and verification results in thread-safe memory, preventing cross-run leakage.
+5. **Direct Engine Reuse**: The MCP server reuses `RepositoryLoader`, `StaticScanner`, `EvidenceBuilder`, `ReasoningEngine`, `PatchGenerator`, `VerificationEngine`, and `build_slsa_attestation` directly. No mock or parallel security implementations are permitted.
+6. **Console Script Entry Points**: Defined in `pyproject.toml`:
+   - `vayu-mcp = "vayu_mcp.server:main"`
+   - `vayu = "crs.vayu:main"`
+7. **Testing Protocol**: All MCP tools and protocol handshakes are covered in `tests/mcp_server/` (21 automated tests).
+
+---
+
+## 18. VAYU Skills CLI & Agent Skills Engine
+
+VAYU features a dedicated **Skills CLI** (`vayu skills`) inspired by modern developer skill ecosystems (such as Anthropic's Skills CLI), allowing developers to discover, search, and install reusable AI coding skills directly into their local projects or global environments.
+
+### Critical Distinction: `skills.md` vs. `SKILL.md`
+
+- **`skills.md` (Repository Root)**: Persistent engineering handbook and operational rules governing how coding agents and engineers work inside the **VAYU codebase itself**.
+- **`SKILL.md` (Individual Agent Skills)**: Portable instructions conforming to the standard Agent Skills specification installed under `.agents/skills/<skill-name>/SKILL.md` for AI clients (Antigravity IDE, Claude, Cursor) to load into target projects.
+
+### Command Reference
+
+| Command | Description |
+|---|---|
+| `vayu skills` | Display the VAYU SKILLS banner, usage guide, and command list |
+| `vayu skills list` | List all bundled catalog skills and installed project/global skills |
+| `vayu skills search <query>` | Search skills by keyword, category, or tags with token/stem matching |
+| `vayu skills add <skill>` | Install a skill into the project directory (`.agents/skills/`) |
+| `vayu skills add <skill> --global` | Install a skill into the user-level global directory |
+| `vayu skills add <skill> --from <git-url>` | Safely clone and install an external skill from a Git repository |
+| `vayu skills add <skill> --force` | Overwrite an existing skill installation |
+| `vayu skills add <skill> --no-animation` | Disable terminal animations (honors `NO_COLOR` / non-TTY) |
+| `vayu skills remove <skill>` | Safely remove an installed skill from project or global directory |
+| `vayu skills info <skill>` | Display detailed metadata and instruction preview for a skill |
+| `vayu skills doctor` | Perform diagnostic health checks on skills directories and metadata |
+
+### Bundled Skills Catalog
+
+VAYU includes 8 production-grade skills grounded in VAYU's security invariants and architecture:
+1. `security-analysis`: Evidence-based vulnerability analysis and root-cause tracing.
+2. `secure-code-review`: Pattern matching, taint tracing, and injection defect identification.
+3. `vulnerability-remediation`: Minimal, single-site, non-architectural security patches.
+4. `patch-verification`: 4-gate fail-closed deterministic verification.
+5. `prompt-injection-defense`: Separation of untrusted repository inputs and prompt-firewall principles.
+6. `sast-workflow`: AST rule authoring, Semgrep scanning, and evidence generation.
+7. `mcp-development`: Safe Model Context Protocol tool design and stdio isolation.
+8. `vayu-development`: VAYU internal architecture, Pydantic schemas, and coding conventions.
+
+### Security Invariants for Skill Installation
+
+1. **Path Traversal Protection**: Skill names are strictly validated against `^[a-zA-Z0-9_-]+$`. Target paths must reside strictly within the intended directory parent.
+2. **Safe Git Retrieval**: Git URLs are validated against shell metacharacters and allowed protocols (`https://`, `http://`, `git@`, `file://`).
+3. **No Automatic Script Execution**: Downloaded instructions are treated as untrusted data. No post-install hooks or package scripts are ever executed.
+4. **Atomic Rollback**: If an installed skill directory lacks a valid `SKILL.md`, the installation rolls back cleanly.
+

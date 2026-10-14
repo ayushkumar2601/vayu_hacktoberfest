@@ -98,12 +98,15 @@ AIKAVACH_OLLAMA_TIMEOUT=180
 
 ---
 
-## Demo
+## Demo & Presentation Playbook
+
+For a complete step-by-step presentation script, copy-paste terminal runbook, and judge Q&A defense, see **[DEMO_GUIDE.md](file:///Users/ayush/Desktop/hackto/vayu/DEMO_GUIDE.md)**.
 
 Run the command-injection sample to see VAYU in action:
 
 ```bash
-python -m crs.demo samples/vulnerable/command_injection
+vayu samples/vulnerable/command_injection
+# or: python -m crs.demo samples/vulnerable/command_injection
 ```
 
 A successful run goes through all four stages (Find -> Reason -> Patch -> Verify) and ends with:
@@ -173,6 +176,72 @@ If verification cannot establish that the candidate patch is completely safe, th
 
 ---
 
+## VAYU Skills CLI: Autonomous Agent Skills Engine
+
+VAYU features a dedicated **Skills CLI** (`vayu skills`) inspired by Anthropic's Skills CLI, allowing developers to manage, search, and install reusable AI coding skills directly into their local projects or global environments.
+
+```text
+██╗   ██╗ █████╗ ██╗   ██╗██╗   ██╗
+██║   ██║██╔══██╗╚██╗ ██╔╝██║   ██║
+██║   ██║███████║ ╚████╔╝ ██║   ██║
+╚██╗ ██╔╝██╔══██║  ╚██╔╝  ██║   ██║
+ ╚████╔╝ ██║  ██║   ██║   ╚██████╔╝
+  ╚═══╝  ╚═╝  ╚═╝   ╚═╝    ╚═════╝ 
+
+   ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+   ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+   ███████╗█████╔╝ ██║██║     ██║     ███████╗
+   ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+   ███████║██║  ██╗██║███████╗███████╗███████║
+   ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+
+VAYU SKILLS — Autonomous Cyber Reasoning System Agent Skills Engine
+```
+
+### Installation & Commands
+
+```bash
+# Explore available bundled and installed skills
+vayu skills list
+
+# Search skills by keyword
+vayu skills search security
+
+# Install a skill into the project repository (.agents/skills/)
+vayu skills add security-analysis
+
+# Install globally for user-level AI coding clients
+vayu skills add security-analysis --global
+
+# Install an external skill safely from Git
+vayu skills add frontend-design --from https://github.com/anthropics/skills
+
+# Inspect skill metadata and preview instructions
+vayu skills info security-analysis
+
+# Run diagnostics and directory health checks
+vayu skills doctor
+
+# Safely remove an installed skill
+vayu skills remove security-analysis
+```
+
+### Bundled Skills Catalog
+
+| Skill Name | Purpose |
+|---|---|
+| `security-analysis` | Vulnerability triage, scanner evidence interpretation, and root-cause mapping |
+| `secure-code-review` | Code auditing for OWASP Top 10, taint flows, and unsafe primitives |
+| `vulnerability-remediation` | Minimal, bounded security patching without architectural refactoring |
+| `patch-verification` | 4-stage fail-closed verification (syntax, tests, exploit regression, rescan) |
+| `prompt-injection-defense` | Untrusted repository separation, boundary tagging, and prompt firewalls |
+| `sast-workflow` | Semgrep AST pattern matching, custom rule authoring, and evidence building |
+| `mcp-development` | Model Context Protocol tool authoring, schema binding, and stdio safety |
+| `vayu-development` | VAYU system architecture, Pydantic data models, and safety invariants |
+
+---
+
 ## Project Status
 
-The core MVP is working end-to-end, and the test suite currently contains 140 passing tests. We are rapidly iterating towards the 1-month production-grade vision. Join us in building the future of autonomous cybersecurity.
+The core MVP is working end-to-end, and the test suite currently contains **179 passing tests** across core reasoning, sandbox verification, the MCP server, and the Skills CLI. We are rapidly iterating towards the 1-month production-grade vision. Join us in building the future of autonomous cybersecurity.
+

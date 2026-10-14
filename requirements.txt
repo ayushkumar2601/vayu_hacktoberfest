@@ -8,3 +8,6 @@ cryptography>=42.0
 
 # Static-analysis tool
 semgrep>=1.0
+
+# Model Context Protocol (MCP) SDK
+mcp>=1.0.0

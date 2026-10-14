@@ -274,6 +274,27 @@ export default function Dashboard() {
               />
               <i className="fa-solid fa-magnifying-glass" />
             </label>
+            <Link
+              href="/reviews"
+              className="icon-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "0 10px",
+                width: "auto",
+                fontSize: 12,
+                fontWeight: 500,
+                background: "rgba(255, 255, 255, 0.08)",
+                borderRadius: 6,
+                color: "#fff",
+                textDecoration: "none",
+              }}
+              title="Switch to Linear Code Reviews View"
+            >
+              <i className="fa-solid fa-code-branch" style={{ color: "#a855f7" }} />
+              <span>Reviews</span>
+            </Link>
             <button className="icon-btn" onClick={tour.open} aria-label="How VAYU works" data-tip="How it works (?)">
               <i className="fa-solid fa-question" />
             </button>

@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Local agent configs
+.agents/
+skills-lock.json
+
 # C extensions
 *.so
 

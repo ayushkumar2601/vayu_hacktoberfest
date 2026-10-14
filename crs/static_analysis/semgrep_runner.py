@@ -75,9 +75,28 @@ class SemgrepRunner:
                 check=False,
             )
         except FileNotFoundError as exc:
-            raise SemgrepNotFoundError(
-                f"Semgrep executable was not found: {self.executable}"
-            ) from exc
+            import sys
+            venv_bin = Path(sys.executable).parent / "semgrep"
+            if self.executable == "semgrep" and venv_bin.is_file():
+                try:
+                    completed = subprocess.run(
+                        [str(venv_bin)] + command[1:],
+                        capture_output=True,
+                        text=True,
+                        encoding="utf-8",
+                        errors="replace",
+                        shell=False,
+                        timeout=self.timeout_seconds,
+                        check=False,
+                    )
+                except FileNotFoundError:
+                    raise SemgrepNotFoundError(
+                        f"Semgrep executable was not found: {self.executable}"
+                    ) from exc
+            else:
+                raise SemgrepNotFoundError(
+                    f"Semgrep executable was not found: {self.executable}"
+                ) from exc
         except subprocess.TimeoutExpired as exc:
             raise SemgrepTimeoutError(
                 f"Semgrep exceeded the {self.timeout_seconds:g}-second timeout"

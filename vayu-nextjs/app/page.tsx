@@ -106,7 +106,8 @@ export default function Home() {
         <header className="header anim" style={{ "--d": "0s" } as React.CSSProperties}>
           <nav className="desktop-nav">
             <a href="#" className="nav-link active">Home</a>
-            <Link href="/dashboard" className="nav-link">Dashboard</Link>
+            <Link href="/reviews" className="nav-link">Reviews</Link>
+            <Link href="/dashboard" className="nav-link">3D Dashboard</Link>
             <a href="#" className="nav-link">Case Studies</a>
             <a href="#" className="nav-link">Contact</a>
           </nav>
@@ -143,7 +144,10 @@ export default function Home() {
             Experience true autonomous cybersecurity. VAYU doesn't just find vulnerabilities—<br />it reasons, patches, and mathematically proves they are eradicated.
           </p>
 
-          <Link href="/dashboard" className="cta anim" style={{ "--d": "0.4s" } as React.CSSProperties}>Open Dashboard</Link>
+          <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+            <Link href="/reviews" className="cta anim" style={{ "--d": "0.4s" } as React.CSSProperties}>Code Reviews</Link>
+            <Link href="/dashboard" className="cta anim" style={{ "--d": "0.48s", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)" } as React.CSSProperties}>3D Terrain</Link>
+          </div>
         </main>
 
         <footer className="stats-footer">
@@ -175,7 +179,8 @@ export default function Home() {
       <div className={`mobile-menu ${menuOpen ? "" : "hidden"}`}>
         <nav className="mobile-nav">
           <a href="#" className="nav-link active anim-mob" onClick={closeMenu}>Home</a>
-          <Link href="/dashboard" className="nav-link anim-mob" onClick={closeMenu}>Dashboard</Link>
+          <Link href="/reviews" className="nav-link anim-mob" onClick={closeMenu}>Reviews (Linear UI)</Link>
+          <Link href="/dashboard" className="nav-link anim-mob" onClick={closeMenu}>3D Dashboard</Link>
           <a href="#" className="nav-link anim-mob" onClick={closeMenu}>Case Studies</a>
           <a href="#" className="nav-link anim-mob" onClick={closeMenu}>Contact</a>
         </nav>

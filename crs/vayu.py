@@ -22,6 +22,7 @@ from crs.reasoning.evidence_builder import EvidenceBuilder
 from crs.reasoning.reasoning_engine import ReasoningEngine
 from crs.static_analysis.scanner import StaticScanner
 from crs.verification.verification_engine import VerificationEngine
+from crs.skills_cli.commands import skills_cli
 
 console = Console()
 
@@ -196,10 +197,26 @@ def render_actionable_error(title: str, description: str, action: str):
     console.print(Panel(table, title=f"[bold red]{title}[/]", border_style="red"))
 
 
-@click.command()
-@click.argument('target_path', type=click.Path(exists=True))
-def main(target_path):
-    """Run the Vayu Autonomous Cyber Reasoning System on a target repository."""
+class VayuDefaultGroup(click.Group):
+    """Click group that defaults unknown positional arguments to 'scan' for backward compatibility."""
+
+    def resolve_command(self, ctx, args):
+        if args and args[0] not in self.commands and not args[0].startswith("-"):
+            args = ["scan"] + args
+        return super().resolve_command(ctx, args)
+
+
+@click.group(cls=VayuDefaultGroup, invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    """VAYU — Autonomous Cyber Reasoning System (CRS)."""
+    if ctx.invoked_subcommand is None:
+        console.print(ASCII_LOGO)
+        console.print(ctx.get_help())
+
+
+def run_scan(target_path):
+    """Execute the core VAYU CRS scan and remediation pipeline."""
     console.print(ASCII_LOGO)
     
     provider = os.environ.get("AIKAVACH_LLM_PROVIDER", "").strip().lower()
@@ -369,6 +386,17 @@ def main(target_path):
             "Review the target code or restart the process."
         )
         sys.exit(1)
+
+
+@cli.command("scan")
+@click.argument('target_path', type=click.Path(exists=True))
+def scan(target_path):
+    """Run the Vayu Autonomous Cyber Reasoning System on a target repository."""
+    run_scan(target_path)
+
+
+cli.add_command(skills_cli, name="skills")
+main = cli
 
 if __name__ == "__main__":
     main()
