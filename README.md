@@ -16,6 +16,10 @@
   <a href="#-license"><img src="https://img.shields.io/badge/License-Apache%202.0-yellow?style=flat-square" alt="License" /></a>
 </p>
 
+<p align="center">
+  <img src="pics/landingpage.png" alt="VAYU — Autonomous Cyber Reasoning System" width="100%" style="border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</p>
+
 ---
 
 ## 📌 Executive Overview
@@ -24,7 +28,7 @@
 
 VAYU inverts this model through an autonomous, deterministic, and fail-closed cyber reasoning loop:
 
-$$\textbf{FIND} \longrightarrow \textbf{REASON} \longrightarrow \textbf{PATCH} \longrightarrow \textbf{VERIFY}$$
+$$\textbf{FIND} \longrightarrow \textbf{REASON} \longrightarrow \textbf{PATCH} \longrightarrow \textbf{VERIFY} \longrightarrow \textbf{DEPLOY}$$
 
 Unlike naive LLM code-generation scripts that hallucinate broken diffs, VAYU adheres to strict mathematical safety invariants:
 1. **The LLM never generates code directly**: The model outputs constrained, atomic structured edit intent (`PatchEdit`).
@@ -114,6 +118,10 @@ sequenceDiagram
    └──────────────┘      REJECTED  -> Fail-closed drop, Zero mutation
 ```
 
+<p align="center">
+  <img src="pics/vayu_cli.png" alt="VAYU Terminal Scanner — Gemma 4 Reasoning & Vulnerability Detection" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
 ### The 4 Formal Verification Gates
 
 1. **Gate 1: Build & Syntax Integration**  
@@ -125,45 +133,91 @@ sequenceDiagram
 4. **Gate 4: Static AST Rescan**  
    Runs Semgrep against the patched workspace using the exact security rule that caught the vulnerability. If the signature triggers even once, the patch is rejected.
 
+<p align="center">
+  <img src="pics/vayu_cli2.png" alt="VAYU Formal Verification Matrix & Multi-Finding Autonomous Triage" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
 ---
 
 ## 🖥️ VAYU Web Review Console & Direct GitHub Push
 
 VAYU includes an enterprise-grade, high-performance web interface built with **Next.js 16 (Turbopack)** and a sleek Linear/GitHub security review design aesthetic (`/reviews`):
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ VAYU Reviews   [ ☁ DigitalOcean ● ]  [ 💻 Local /tmp ]     [ ▶ Run Test ]  [ 🐙 Push to GitHub ] │
-├──────────────────────────────────────┬───────────────────────────────────────────────────────────┤
-│ Active Review Queue (6)              │  VAYU-8467 > Fix OS command injection via subprocess.run  │
-│                                      ├───────────────────────────────────────────────────────────┤
-│ ● VAYU-8467 Fix command injection    │  [ Diff ]  [ CLI Output ]  [ Reasoning ]  [ Proof ]       │
-│   Waiting for review • Just now      │                                                           │
-│                                      │  --- a/samples/vulnerable/command_injection/app.py        │
-│ ○ DRV-8467 Improve sync handling     │  +++ b/samples/vulnerable/command_injection/app.py        │
-│   Waiting for review • 1h            │  - subprocess.run(command, shell=True, check=False)       │
-│                                      │  + subprocess.run(command.split(), check=False)           │
-│ ○ SEC-2194 Fix hardcoded JWT key     │                                                           │
-│   Waiting for review • 2h            │  4-Gate Verification: ✓ VERIFIED                          │
-│                                      │  Sandbox: ☁ DigitalOcean Droplet (KVM) (NYC3)             │
-│                                      │  SLSA Provenance: sha256:0b25132ca2411664ef... [ECDSA]    │
-└──────────────────────────────────────┴───────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="pics/vayuweb_code.png" alt="VAYU Linear-Style Security Reviews Console — Unified AST Diff & Push to GitHub" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
 
-### Key UI Features
+### Key Web Console Features
 
 - **Segmented Sandbox Toggle**: Switch between `☁ DigitalOcean` hardware hypervisor Droplets and `💻 Local /tmp` with one click.
 - **Verification & Proof Telemetry Card**: Visualizes the active DigitalOcean Droplet instance (`s-1vcpu-1gb`), datacenter region (`NYC3`), Ed25519 in-memory tunnel, and `INV-DO-2` auto-teardown safety guarantee.
 - **🐙 One-Click Push to GitHub**: Integrates with [`POST /api/git/push`](file:///Users/ayush/Desktop/hackto/vayu/vayu-nextjs/app/api/git/push/route.ts) to automatically stage, commit verified security patches with rich metadata, and push directly to `origin/main`.
 - **Keyboard-Driven Shortcuts**: Navigate reviews with `J`/`K`, toggle tabs with `1`-`5`, trigger runs with `R`, and push code with `P`.
 
+<p align="center">
+  <img src="pics/web_output.png" alt="Gemma 4 Autonomous Reasoning & Root-Cause Analysis in VAYU Web Console" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
+---
+
+## 🌐 3D Threat Terrain Mission Control (`/dashboard`)
+
+For security operations centers and architectural oversight, VAYU includes an interactive **3D WebGL point-cloud codebase elevation map**:
+
+<p align="center">
+  <img src="pics/dashboard.png" alt="VAYU 3D Codebase Analysis & Interactive Risk Hotspot Elevation Map" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
+- **Topological Elevation Map**: File density and nesting complexity rise into visual highlands.
+- **Vulnerability Hot-Zones**: Glowing orange peaks identify vulnerable endpoints (e.g. `app.py`).
+- **Real-Time Thermal Cooling**: As VAYU generates and verifies the remediation patch in the background, the glowing orange hotspot cools to stable green/blue.
+- **System Architecture Simulation**: Switch to "System View" to simulate data flow from untrusted client inputs through web routes and into database/system shells.
+
+---
+
+## 🧰 VAYU Skills CLI Engine
+
+Inspired by Anthropic's developer experience, VAYU includes a dedicated **Skills CLI** (`vayu skills`) with an animated terminal installer, dependency management, and health diagnostics:
+
+<p align="center">
+  <img src="pics/skillscli.png" alt="VAYU Skills CLI — System Diagnostics (doctor) and Agent Skills Catalog (list)" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
+```bash
+# Browse bundled skills catalog
+vayu skills list
+
+# Install security analysis skill into project repository (.agents/skills/)
+vayu skills add security-analysis
+
+# Install skill globally for user-level AI coding agents
+vayu skills add vulnerability-remediation --global
+
+# Install external skills directly from GitHub
+vayu skills add frontend-design --from https://github.com/anthropics/skills
+
+# Run comprehensive system diagnostics
+vayu skills doctor
+```
+
+### Bundled Skills Catalog
+
+| Skill Name | Purpose |
+|---|---|
+| `security-analysis` | Vulnerability triage, scanner evidence interpretation, and root-cause mapping |
+| `secure-code-review` | Code auditing for OWASP Top 10, taint flows, and unsafe primitives |
+| `vulnerability-remediation` | Minimal, bounded security patching without architectural refactoring |
+| `patch-verification` | 4-stage fail-closed verification (syntax, tests, exploit regression, rescan) |
+| `prompt-injection-defense` | Untrusted repository separation, boundary tagging, and prompt firewalls |
+| `sast-workflow` | Semgrep AST pattern matching, custom rule authoring, and evidence building |
+| `mcp-development` | Model Context Protocol tool authoring, schema binding, and stdio safety |
+| `vayu-development` | VAYU system architecture, Pydantic data models, and safety invariants |
+
 ---
 
 ## 🔌 Model Context Protocol (MCP) Server
 
 VAYU implements an enterprise **FastMCP Protocol Server** ([`crs/mcp/server.py`](file:///Users/ayush/Desktop/hackto/vayu/crs/mcp/server.py)), enabling AI-assisted developer environments (Claude Desktop, Cursor, Antigravity IDE, Zed) to natively invoke VAYU's cyber reasoning capabilities:
-
-### Available MCP Tools
 
 ```json
 {
@@ -210,42 +264,6 @@ Add to your `claude_desktop_config.json` or Cursor MCP settings:
   }
 }
 ```
-
----
-
-## 🧰 VAYU Skills CLI Engine
-
-Inspired by Anthropic's developer experience, VAYU includes a dedicated **Skills CLI** (`vayu skills`) with an animated terminal installer, dependency management, and health diagnostics:
-
-```bash
-# Browse bundled skills catalog
-vayu skills list
-
-# Install security analysis skill into project repository (.agents/skills/)
-vayu skills add security-analysis
-
-# Install skill globally for user-level AI coding agents
-vayu skills add vulnerability-remediation --global
-
-# Install external skills directly from GitHub
-vayu skills add frontend-design --from https://github.com/anthropics/skills
-
-# Run comprehensive system diagnostics
-vayu skills doctor
-```
-
-### Bundled Skills Catalog
-
-| Skill Name | Purpose |
-|---|---|
-| `security-analysis` | Vulnerability triage, scanner evidence interpretation, and root-cause mapping |
-| `secure-code-review` | Code auditing for OWASP Top 10, taint flows, and unsafe primitives |
-| `vulnerability-remediation` | Minimal, bounded security patching without architectural refactoring |
-| `patch-verification` | 4-stage fail-closed verification (syntax, tests, exploit regression, rescan) |
-| `prompt-injection-defense` | Untrusted repository separation, boundary tagging, and prompt firewalls |
-| `sast-workflow` | Semgrep AST pattern matching, custom rule authoring, and evidence building |
-| `mcp-development` | Model Context Protocol tool authoring, schema binding, and stdio safety |
-| `vayu-development` | VAYU system architecture, Pydantic data models, and safety invariants |
 
 ---
 
@@ -315,30 +333,6 @@ vayu scan samples/vulnerable/command_injection --sandbox local
 ### Run Vulnerability Scan with DigitalOcean Cloud Sandbox
 ```bash
 vayu scan samples/vulnerable/command_injection --sandbox digitalocean
-```
-
-### Terminal Output Preview
-
-```text
-⚡ VAYU CRS — Autonomous Cyber Reasoning System
-[+] Fingerprinting target repository: 0b25132ca2411664ef1d1ef29948ebef4f978001...
-[+] [1/4 FIND] Executing Semgrep AST scan...
-    Found: CWE-78: OS Command Injection in app.py:261
-[+] [2/4 REASON] Analyzing root cause with Gemma 4...
-    Identified unsafe shell=True invocation on untrusted operator input.
-[+] [3/4 PATCH] Synthesizing unified diff...
-    Generated minimal safe split() patch.
-[+] [4/4 VERIFY] Provisioning DigitalOcean Droplet (nyc3, s-1vcpu-1gb)...
-    IP Assigned: 159.203.88.12 • Ephemeral Ed25519 Tunnel Established
-    Gate 1: Build & Syntax ......... PASSED
-    Gate 2: Functional Tests ....... PASSED (4/4 test cases)
-    Gate 3: Exploit Regression ..... PASSED (Payload neutralized)
-    Gate 4: Semgrep AST Rescan ..... PASSED (0 findings)
-[+] DigitalOcean Droplet destroyed successfully (Teardown verified).
-----------------------------------------------------------------------
-FINAL DECISION: VERIFIED (Approved for Deployment)
-SLSA ATTESTATION: sha256:0b25132ca2411664ef1d1ef29948ebef4f978001afbeb89...
-ORIGINAL REPOSITORY MODIFIED: NO (Byte-for-byte identical)
 ```
 
 ---
