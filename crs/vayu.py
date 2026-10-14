@@ -226,7 +226,7 @@ def main(target_path):
         )
         sys.exit(1)
 
-    console.print(f"[dim]Model:[/] [orange3]{config.model}[/]\n")
+    console.print("[dim]Model:[/] [orange3]gemma 4[/]\n")
     
     # Initialize components
     repository_loader = RepositoryLoader()
